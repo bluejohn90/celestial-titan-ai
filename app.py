@@ -76,13 +76,17 @@ def ui_tab(label, n, sample):
         st.write(f"**Candidate digits:** {cand}")
         st.dataframe(out,
 # --- Rarity Radar (triples/quads/quints) ---
-label = {3:"Triples Radar", 4:"Quad Radar", 5:"Quints Radar"}[n]
-with st.expander(f"🛰️ {label}", expanded=False):
+label = {3: "Triples Radar", 4: "Quad Radar", 5: "Quints Radar"}[n]
+
+# Rarity Radar (triples/quads/quints)
+# Note: Removed emoji for compatibility
+with st.expander(f"{label}", expanded=False):
     stats = rarity_gaps(dfw, n)
     st.caption("Tip: larger 'gap' = mas matagal nang di lumalabas sa history window.")
     st.dataframe(
-        pd.DataFrame(stats)[["digit","combo","gap","seen"]],
-        use_container_width=True, height=220
+        pd.DataFrame(stats)[["digit", "combo", "gap", "seen"]],
+        use_container_width=True,
+        height=220
     )
     if st.button(f"Add top 3 {('triples' if n==3 else 'quads' if n==4 else 'quints')} to candidates", key=f"add_rarity_{n}"):
         rare_combos = ["".join(c) if isinstance(c, tuple) else c for c in [s["combo"] for s in stats[:3]]]
