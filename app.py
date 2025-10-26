@@ -74,7 +74,21 @@ def ui_tab(label, n, sample):
     l,r = st.columns([2,1])
     with l:
         st.write(f"**Candidate digits:** {cand}")
-        st.dataframe(out, use_container_width=True, height=420)
+        st.dataframe(out,# --- Rarity Radar (triples/quads/quints) ---
+label = {3:"Triples Radar", 4:"Quad Radar", 5:"Quints Radar"}[n]
+with st.expander(f"🛰️ {label}", expanded=False):
+    stats = rarity_gaps(dfw, n)
+    st.caption("Tip: larger 'gap' = mas matagal nang di lumalabas sa history window.")
+    st.dataframe(
+        pd.DataFrame(stats)[["digit","combo","gap","seen"]],
+        use_container_width=True, height=220
+    )
+    if st.button(f"Add top 3 {('triples' if n==3 else 'quads' if n==4 else 'quints')} to candidates", key=f"add_rarity_{n}"):
+        rare_combos = ["".join(c) if isinstance(c, tuple) else c for c in [s["combo"] for s in stats[:3]]]
+        # prepend to the scored output (with a slight score boost so they appear at the top)
+        boost = pd.DataFrame({"combo": rare_combos, "score": [1.0]*len(rare_combos)})
+        out = pd.concat([boost, out[~out["combo"].isin(rare_combos)]], ignore_index=True)
+use_container_width=True, height=420)
         st.download_button("⬇️ Download Top (CSV)", out.to_csv(index=False).encode(), file_name=f"celestial_pick{n}.csv", mime="text/csv")
         st.download_button("⬇️ Download Top (TXT)", "\n".join(out['combo']).encode(), file_name=f"celestial_pick{n}.txt", mime="text/plain")
     with r:
@@ -126,3 +140,28 @@ with tab3: ui_tab("Pick 3", 3, SAMPLE_P3)
 with tab4: ui_tab("Pick 4", 4, SAMPLE_P4)
 with tab5: ui_tab("Pick 5", 5, SAMPLE_P5)
 st.info("Tip: Upload 180–300 recent draws per game for better signals. Adjust weights per state profile.")
+
+# ---- RARITY RADAR HELPERS ----
+def rarity_gaps(df, n):
+    """Return gap stats for same-digit runs (triples/quads/quints)."""
+    # rows are chronological; we traverse from newest to oldest
+    m = {}  # digit -> gap (0 = just hit)
+    total = len(df)
+    for d in range(10):
+        m[d] = None  # None = never seen in history
+
+    # scan newest->oldest
+    for idx, (_, row) in enumerate(reversed(df.reset_index(drop=True)).iterrows()):
+        digs = [int(row[f"d{i+1}"]) for i in range(n)]
+        if len(set(digs)) == 1:
+            d = digs[0]
+            if m[d] is None:
+                m[d] = idx  # first time we encounter from newest side
+
+    # convert None to a big gap (=total draws)
+    out = []
+    for d in range(10):
+        gap = m[d] if m[d] is not None else total
+        out.append({"digit": d, "combo": str(d)*n, "gap": int(gap), "seen": m[d] is not None})
+    out.sort(key=lambda x: (-x["gap"], x["digit"]))
+    return out
