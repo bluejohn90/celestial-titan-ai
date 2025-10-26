@@ -74,7 +74,8 @@ def ui_tab(label, n, sample):
     l,r = st.columns([2,1])
     with l:
         st.write(f"**Candidate digits:** {cand}")
-        st.dataframe(out,# --- Rarity Radar (triples/quads/quints) ---
+        st.dataframe(out,
+# --- Rarity Radar (triples/quads/quints) ---
 label = {3:"Triples Radar", 4:"Quad Radar", 5:"Quints Radar"}[n]
 with st.expander(f"🛰️ {label}", expanded=False):
     stats = rarity_gaps(dfw, n)
