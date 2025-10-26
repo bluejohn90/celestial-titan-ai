@@ -77,9 +77,8 @@ def ui_tab(label, n, sample):
         st.dataframe(out,
 # --- Rarity Radar (triples/quads/quints) ---
 label = {3: "Triples Radar", 4: "Quad Radar", 5: "Quints Radar"}[n]
-# Rarity Radar (triples/quads/quints)
-# Note: Removed emoji for compatibility
-with st.expander(f"{label}", expanded=False):
+
+with st.expander(label, expanded=False):
     stats = rarity_gaps(dfw, n)
     st.caption("Tip: larger 'gap' = mas matagal nang di lumalabas sa history window.")
     st.dataframe(
