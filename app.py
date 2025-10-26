@@ -1,4 +1,7 @@
-# Celestial Titan AI — Optimized Ensemble (Pick3/4/5)
+@st.cache_data
+def load_csv(uploaded, sample_str):
+    return pd.read_csv(uploaded) if uploaded else pd.read_csv(StringIO(sample_str))
+ Celestial Titan AI — Optimized Ensemble (Pick3/4/5)
 import streamlit as st, pandas as pd, numpy as np
 from io import StringIO
 from itertools import product
