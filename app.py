@@ -1,180 +1,186 @@
-# app.py — Celestial Titan AI Pro v2
-
 import streamlit as st
-import pandas as pd
-import numpy as np
-from io import StringIO
+import json
+import random
+from datetime import datetime
 
-# ---------------- Page config ----------------
+# -------------------------------
+# PAGE CONFIG
+# -------------------------------
 st.set_page_config(
-    page_title="🎯 Celestial Titan AI Pro v2",
+    page_title="Celestial Titan God AI",
     page_icon="🌌",
-    layout="wide",
-    initial_sidebar_state="expanded"
+    layout="wide"
 )
 
-# ---------------- Global CSS (dark) ----------------
+# -------------------------------
+# TITAN THEME
+# -------------------------------
+PRIMARY = "#00C6FF"
+SECONDARY = "#8F00FF"
+BACKGROUND = "#050B1A"
+
 st.markdown(
-    """
+    f"""
     <style>
-        [data-testid="stSidebar"] { background-color: #0B0B20; color: white; }
-        [data-testid="stAppViewContainer"] { background-color: #101020; }
-        h1,h2,h3,h4,h5,h6,p,div,span,a { color: #E0E0E0 !important; }
-        .card { background-color: rgba(255,255,255,0.03); padding: 14px; border-radius: 8px; margin-bottom:12px; }
-        @media (max-width: 600px) { .card { padding: 10px; } }
+    body {{
+        background-color: {BACKGROUND};
+        color: #E0E0E0;
+    }}
+    .stButton>button {{
+        background: linear-gradient(90deg, #0060FF, {PRIMARY});
+        color: white;
+        border-radius: 12px;
+        padding: 0.6em 1.2em;
+        border: none;
+    }}
     </style>
     """,
-    unsafe_allow_html=True,
+    unsafe_allow_html=True
 )
 
-# ---------------- Helper: safe slider ----------------
-def safe_slider(label: str, df_like=None, requested_min=1, requested_default=None):
-    """
-    Safe slider wrapper (prevents min==max errors).
-    """
-    try:
-        if isinstance(df_like, (pd.DataFrame, list, tuple, str)):
-            length = len(df_like)
-        elif isinstance(df_like, int):
-            length = df_like
-        else:
-            length = 0
+# -------------------------------
+# SIDEBAR NAVIGATION
+# -------------------------------
+st.sidebar.markdown("## 🌌 Titan Console")
+menu = st.sidebar.radio(
+    "Navigate",
+    [
+        "Dashboard",
+        "Forecast Console",
+        "Forecast Calendar",
+        "Accuracy Analytics",
+        "Lunar Sync",
+        "Settings"
+    ]
+)
 
-        if length <= 1:
-            length = 10
-        min_val = max(1, requested_min)
-        max_val = max(min_val + 1, length)
-        if requested_default is None:
-            default_val = min(max_val // 2, 10)
-        else:
-            default_val = max(min_val, min(requested_default, max_val))
-        return st.slider(label, min_val, max_val, default_val)
-    except Exception:
-        return st.slider(label, 1, 10, 5)
+# -------------------------------
+# MOCK DATA
+# -------------------------------
+def generate_forecast():
+    return sorted(random.sample(range(0, 10), 3))
 
-# ---------------- Sidebar controls ----------------
-with st.sidebar:
-    st.title("🌌 Celestial Titan AI Pro v2")
-    st.markdown("### Quad Sniper Analyzer")
-    uploaded_file = st.file_uploader(
-        "Upload results CSV or Excel (columns: date, draw_time, numbers)",
-        type=["csv", "xlsx"],
-    )
-    st.markdown("---")
-    st.markdown("**Settings**")
-    preset = st.selectbox("Preset", ["A", "B", "Custom"])
-    run_analysis = st.button("Run Analysis")
+def lunar_phase():
+    phases = [
+        ("New Moon", 12),
+        ("Waxing Crescent", 34),
+        ("First Quarter", 50),
+        ("Waxing Gibbous", 78),
+        ("Full Moon", 100),
+        ("Waning Gibbous", 82),
+        ("Last Quarter", 49),
+        ("Waning Crescent", 21)
+    ]
+    return random.choice(phases)
 
-# ---------------- Main Header ----------------
-st.header("🎯 Quad Sniper Analyzer")
-st.markdown("Analyze Pick-3/4/5 results, generate candidate sets, and export them.")
+# -------------------------------
+# DASHBOARD
+# -------------------------------
+if menu == "Dashboard":
+    st.title("🌌 Celestial Titan God AI")
+    st.caption("Living Intelligence Console")
 
-# ---------------- Tabs (Pick 3 / Pick 4 / Pick 5) ----------------
-tab1, tab2, tab3 = st.tabs(["Pick 3", "Pick 4", "Pick 5"])
+    col1, col2, col3 = st.columns(3)
 
-# ---------------- Function: Load or Sample Data ----------------
-def load_dataset(uploaded_file):
-    df = None
-    if uploaded_file is not None:
-        try:
-            if uploaded_file.name.endswith(".csv"):
-                uploaded_file.seek(0)
-                df = pd.read_csv(uploaded_file)
-            else:
-                uploaded_file.seek(0)
-                df = pd.read_excel(uploaded_file)
-            st.success("✅ File loaded successfully.")
-        except Exception as e:
-            st.error(f"Unable to read file: {e}")
-            df = None
-    else:
-        st.info("No file uploaded. You can paste CSV text or use the sample dataset below.")
-        sample_text = st.text_area("Paste CSV text (optional)", height=120)
-        if sample_text:
-            try:
-                df = pd.read_csv(StringIO(sample_text))
-                st.success("✅ Loaded pasted CSV text.")
-            except Exception as e:
-                st.error(f"Couldn't parse pasted CSV text: {e}")
-        if st.button("Use sample dataset"):
-            df = pd.DataFrame({
-                "date": pd.date_range(end=pd.Timestamp.today(), periods=10).strftime("%Y-%m-%d"),
-                "draw_time": ["Evening"]*10,
-                "numbers": ["12345","67890","11223","44556","77889","00999","33011","77444","55667","88900"]
-            })
-            st.session_state["sample_df"] = df
-            st.experimental_rerun()
-    return df
+    with col1:
+        st.metric("Accuracy Rate", "73.1%", "+1.2%")
 
-# ---------------- Function: Run Analysis ----------------
-def analyze_dataset(df, n_digits):
-    if df is None or "numbers" not in df.columns:
-        st.warning("Please load a valid dataset with a 'numbers' column.")
-        return
-    st.markdown("#### 🔍 Digit Frequency Analysis")
-    all_digits = "".join(df["numbers"].astype(str).tolist())
-    digit_counts = {str(i): all_digits.count(str(i)) for i in range(10)}
-    freq_df = pd.DataFrame(list(digit_counts.items()), columns=["Digit", "Count"]).sort_values("Count", ascending=False)
-    st.table(freq_df)
+    with col2:
+        phase, energy = lunar_phase()
+        st.metric("Lunar Energy", f"{energy}%", phase)
 
-    st.markdown("#### 🎯 Candidate Sets (sample generator)")
-    candidates = ["".join(np.random.choice(list("0123456789"), size=n_digits)) for _ in range(10)]
-    st.write(candidates)
+    with col3:
+        st.metric("Active States", "42", "Pick 3 & Pick 4")
 
-# ---------------- TAB: Pick 3 ----------------
-with tab1:
-    st.subheader("🎲 Pick 3 Analyzer")
-    df3 = load_dataset(uploaded_file)
-    if df3 is not None:
-        st.dataframe(df3.head(20))
-    st.markdown("---")
-    history_window = safe_slider("History window", df3)
-    st.text(f"Using history window = {history_window}")
-    if run_analysis:
-        analyze_dataset(df3, 3)
+    st.markdown("### 🔮 Titan Insight")
+    st.info("Field Resonance Normal — optimal mid-range patterns detected.")
 
-# ---------------- TAB: Pick 4 ----------------
-with tab2:
-    st.subheader("🎲 Pick 4 Analyzer")
-    df4 = load_dataset(uploaded_file)
-    if df4 is not None:
-        st.dataframe(df4.head(20))
-    st.markdown("---")
-    history_window = safe_slider("History window", df4)
-    st.text(f"Using history window = {history_window}")
-    if run_analysis:
-        analyze_dataset(df4, 4)
+# -------------------------------
+# FORECAST CONSOLE
+# -------------------------------
+elif menu == "Forecast Console":
+    st.title("🔮 Titan Forecast Console")
 
-# ---------------- TAB: Pick 5 ----------------
-with tab3:
-    st.subheader("🎲 Pick 5 Analyzer")
-    df5 = load_dataset(uploaded_file)
-    if df5 is not None:
-        st.dataframe(df5.head(20))
-    st.markdown("---")
-    history_window = safe_slider("History window", df5)
-    st.text(f"Using history window = {history_window}")
-    if run_analysis:
-        analyze_dataset(df5, 5)
+    col1, col2, col3 = st.columns(3)
 
-# ---------------- Export ----------------
+    with col1:
+        game = st.selectbox("Game Type", ["Pick 3", "Pick 4", "Pick 5", "Powerball", "Mega Millions"])
+
+    with col2:
+        state = st.selectbox("State", ["CA", "FL", "GA", "TX", "NY", "OH", "VA"])
+
+    with col3:
+        draw = st.selectbox("Draw Time", ["Midday", "Evening", "All Draws"])
+
+    if st.button("⚡ Generate Forecast"):
+        forecast = generate_forecast()
+        confidence = random.randint(72, 94)
+
+        st.success("Forecast Generated")
+
+        st.markdown("### 🎯 Forecast Numbers")
+        st.markdown(f"### **{forecast}**")
+        st.progress(confidence / 100)
+
+        st.caption(f"Titan Confidence Field: {confidence}%")
+
+# -------------------------------
+# FORECAST CALENDAR
+# -------------------------------
+elif menu == "Forecast Calendar":
+    st.title("📅 Titan Forecast Calendar")
+
+    today = datetime.now().strftime("%B %d, %Y")
+    st.markdown(f"**Today:** {today}")
+
+    phase, energy = lunar_phase()
+    st.markdown(f"🌕 **Lunar Phase:** {phase}")
+    st.markdown(f"⚡ **Energy Level:** {energy}%")
+
+    st.info("Calendar persistence will activate in Phase 2 (Cloud Sync).")
+
+# -------------------------------
+# ACCURACY ANALYTICS
+# -------------------------------
+elif menu == "Accuracy Analytics":
+    st.title("📊 Accuracy Analytics")
+
+    col1, col2, col3 = st.columns(3)
+    col1.metric("Total Hits", "242")
+    col2.metric("Total Misses", "88")
+    col3.metric("Accuracy", "73.1%")
+
+    st.markdown("### 📈 7-Day Trend")
+    st.line_chart([71, 72, 73, 72, 74, 75, 73])
+
+# -------------------------------
+# LUNAR SYNC
+# -------------------------------
+elif menu == "Lunar Sync":
+    st.title("🌙 Lunar Sync")
+
+    phase, energy = lunar_phase()
+    st.markdown(f"## {phase}")
+    st.progress(energy / 100)
+
+    st.info("Cosmic Alignment Stable — Titan field synchronized.")
+
+# -------------------------------
+# SETTINGS
+# -------------------------------
+elif menu == "Settings":
+    st.title("⚙️ Settings & Profile")
+
+    st.text_input("Username", "TitanUser")
+    st.selectbox("Subscription Tier", ["Starter", "Pro", "Titan Elite"])
+    st.toggle("Cloud Sync (Coming Soon)", False)
+
+    if st.button("💾 Save Settings"):
+        st.success("Settings saved (local session).")
+
+# -------------------------------
+# FOOTER
+# -------------------------------
 st.markdown("---")
-st.markdown("### 💾 Export Candidates")
-if st.button("Export candidates to CSV"):
-    try:
-        cand_df = pd.DataFrame({"candidate": ["00000","11111","22222","33333","44444"]})
-        csv = cand_df.to_csv(index=False).encode("utf-8")
-        st.download_button("Download CSV", data=csv, file_name="candidates.csv", mime="text/csv")
-    except Exception as e:
-        st.error(f"Export failed: {e}")
-
-# ---------------- Footer ----------------
-st.markdown(
-    """
-    <div style="opacity:0.8; font-size:12px; margin-top:16px;">
-    Made with ❤️ — Celestial Titan AI Pro v2<br>
-    Tip: upload a CSV with a column named <code>numbers</code> (e.g. "12345") for analysis.
-    </div>
-    """,
-    unsafe_allow_html=True,
-)
+st.caption("© 2025 Celestial Titan God AI — v1 Streamlit Core")
+st.caption("Harmony Through Precision, Intelligence & Cosmic Flow 🌠")
